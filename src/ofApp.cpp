@@ -65,7 +65,7 @@ void ofApp::setup(){
     mars.setRotation(0, 180, 0, 0, 1);
 
     mars.setScaleNormalization(false);
-    cout << "# of meshes " << mars.getNumMeshes() << endl;
+    cout << "# of meshes on terrain: " << mars.getNumMeshes() << endl;
     
     marsMesh = mars.getMesh(0);
     
@@ -105,6 +105,14 @@ void ofApp::setup(){
         lander.setScaleNormalization(false);
         //lander.setScale(.9, .5, .5);
         lander.setRotation(0, 180, 0, 0, 1);
+        cout << "# of meshes on barrel: " << lander.getNumMeshes() << endl;
+
+        for(int i=0; i < lander.getNumMeshes(); i ++){
+            ofMesh landerMesh = lander.getMesh(i);
+            Octree octree = Octree();
+            octree.create(landerMesh, 6);
+            movingOctrees.push_back(octree);
+        }
         
         // Lander is represented as a single particle in the system
         // Initially there is just a turbulence force
@@ -114,20 +122,26 @@ void ofApp::setup(){
         landerParticle.position = ofVec3f(0,10,0);
         landerSystem->add(landerParticle);
         
-        insideBarrel.set(1.3, 2.5);
+        insideBarrel.set(1.5, 2.7);
 
         // Maunually creating collision points
         vector<ofVec3f> corners;
         float h = 3;
         float w = 0.85;
-        corners.push_back(ofVec3f( w,  10,      w));
-        corners.push_back(ofVec3f(-w,  10,      w));
-        corners.push_back(ofVec3f( w,  10,     -w));
-        corners.push_back(ofVec3f(-w,  10,     -w));
-        corners.push_back(ofVec3f( w,  10 + h,  w));
-        corners.push_back(ofVec3f(-w,  10 + h,  w));
-        corners.push_back(ofVec3f( w,  10 + h, -w));
-        corners.push_back(ofVec3f(-w,  10 + h, -w));
+        for(int i=0; i<16; i++){
+            corners.push_back(ofVec3f(
+                                landerParticle.position.x + (1.3 * sin(i/ 2.0)),
+                                landerParticle.position.y + ((3/16.0) * i),
+                                landerParticle.position.z + (1.3 * cos(i / 2.0))));
+        }
+//        corners.push_back(ofVec3f( w,  10,      w));
+//        corners.push_back(ofVec3f(-w,  10,      w));
+//        corners.push_back(ofVec3f( w,  10,     -w));
+//        corners.push_back(ofVec3f(-w,  10,     -w));
+//        corners.push_back(ofVec3f( w,  10 + h,  w));
+//        corners.push_back(ofVec3f(-w,  10 + h,  w));
+//        corners.push_back(ofVec3f( w,  10 + h, -w));
+//        corners.push_back(ofVec3f(-w,  10 + h, -w));
 
         for (auto corner : corners){
             Particle p;
@@ -314,6 +328,9 @@ void ofApp::draw(){
             for(int i=0; i<octrees.size(); i++){
                 octrees[i].draw(octrees[i].root, 4, 0);
             }
+            for(int i=0; i<movingOctrees.size(); i++){
+                movingOctrees[i].draw(movingOctrees[i].root, 4, 0);
+            }
             //octree.draw(octree.root, 10, 0);
         }
         
@@ -322,6 +339,13 @@ void ofApp::draw(){
             for(int i=0; i<octrees.size(); i++){
                 octrees[i].drawLeafNodes(octrees[i].root);
             }
+            
+            ofPushMatrix();
+            ofTranslate(lander.getPosition());
+            for(int i=0; i<movingOctrees.size(); i++){
+                movingOctrees[i].drawLeafNodes(movingOctrees[i].root);
+            }
+            ofPopMatrix();
             //        octree.drawLeafNodes(octree.root);
         }
         
@@ -331,7 +355,7 @@ void ofApp::draw(){
             ofDrawSphere(p.position.x, p.position.y, p.position.z, 0.01);
         }
         
-        insideBarrel.draw();
+        //insideBarrel.draw();
         //barrelTree.drawLeafNodes();
         ofPopMatrix();
         theCam->end();

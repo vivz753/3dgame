@@ -36,6 +36,7 @@ class ofApp : public ofBaseApp{
 		
         Octree octree;
         vector<Octree> octrees;
+    vector<Octree> movingOctrees;
         bool showOctree = false;
         bool showLeafNodes = false;
         ofEasyCam cam;
